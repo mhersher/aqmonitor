@@ -4,11 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pyserial = "*"
 adafruit-io = "*"
 python-aqi = "*"
 py-sds011 = "*"
-serial = "*"
+pyserial = "*"
 
 [dev-packages]
 

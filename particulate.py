@@ -1,4 +1,5 @@
-import serial, time
+import from serial import Serial
+import time
 from Adafruit_IO import Client
 import aqi
 from statistics import median
@@ -107,7 +108,7 @@ class aqreporter(object):
         self.pm_sensor.sleep(sleep=False)
         pm25reads = []
         pm10reads = []
-        time.sleep(measreuemnt_delay)
+        time.sleep(self.measurement_delay)
         readcount=0
         while readcount<3:
             data=self.pm_sensor.query()
