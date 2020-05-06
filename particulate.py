@@ -1,4 +1,3 @@
-import from serial import Serial
 import time
 from Adafruit_IO import Client
 import aqi
