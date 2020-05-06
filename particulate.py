@@ -66,8 +66,8 @@ class aqreporter(object):
             self.measurement_delay = 2
             print('Starting in debug mode')
         else:
-            self.measurement_frequency=settings.get('measurement_frequency')
-            self.measurement_delay=settings.get('measurement_delay')
+            self.measurement_frequency=int(settings.get('measurement_frequency'))
+            self.measurement_delay=int(settings.get('measurement_delay'))
         if self.dummy_data == False:
             pm_sensor_path=settings.get('pm_sensor_device')
             self.pm_sensor=SDS011(pm_sensor_path, use_query_mode=True)
