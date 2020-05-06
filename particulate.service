@@ -1,0 +1,13 @@
+[Unit]
+Description=Particulate Sensor
+After=network.target
+
+[Service]
+ExecStart=/home/pi/.local/share/virtualenvs/aqtester-GPMwka85/bin/python /home/pi/aqtester/particulate.py
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target

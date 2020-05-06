@@ -8,6 +8,7 @@ pyserial = "*"
 adafruit-io = "*"
 python-aqi = "*"
 py-sds011 = "*"
+serial = "*"
 
 [dev-packages]
 
