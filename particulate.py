@@ -61,10 +61,13 @@ class aqreporter(object):
 
         #Device Master Settings
         self.device_id=settings.get('device_id')
-        self.measurement_frequency=settings.get('measurement_frequency')
         if self.debug == True:
             self.measurement_frequency = 30
             self.measurement_delay = 2
+            print('Starting in debug mode')
+        else:
+            self.measurement_frequency=settings.get('measurement_frequency')
+            self.measurement_delay=settings.get('measurement_delay')
         if self.dummy_data == False:
             pm_sensor_path=settings.get('pm_sensor_device')
             self.pm_sensor=SDS011(pm_sensor_path, use_query_mode=True)
@@ -76,6 +79,7 @@ class aqreporter(object):
             self.pm_sensor=None
             self.temp_sensor=None
             self.baro_sensor=None
+            print('Starting in dummy data mode - remember to delete bad data from server')
 
         #Upload endpoint settings
         self.measurement_endpoint=settings.get('measurement_endpoint')
