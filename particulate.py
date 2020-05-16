@@ -1,13 +1,18 @@
 import time
-from Adafruit_IO import Client
 import aqi
 from statistics import median
-from sds011 import SDS011
 import requests
 from datetime import datetime, timedelta
 import configparser
 import argparse
 import random
+try:
+    from sds011 import SDS011
+    import board
+    import busio
+    import adafruit_sht31d
+except:
+    print('Sensor module import failed')
 
 class aqreporter(object):
     def __init__(self):
@@ -71,10 +76,9 @@ class aqreporter(object):
         if self.dummy_data == False:
             pm_sensor_path=settings.get('pm_sensor_device')
             self.pm_sensor=SDS011(pm_sensor_path, use_query_mode=True)
-            temp_sensor_path=settings.get('temp_sensor_device')
-            self.temp_sensor=None #Dummy pending temp sensor implementation
-            baro_sensor_path=settings.get('baro_sensor_device')
-            self.baro_sensor=None #Dummy pending baro sensor implementation
+            i2c = busio.I2C(board.SCL, board.SDA)
+            self.temp_sensor = adafruit_sht31d.SHT31D(i2c)
+            self.baro_sensor = adafruit_sht31d.SHT31D(i2c)
         else:
             self.pm_sensor=None
             self.temp_sensor=None
@@ -131,14 +135,14 @@ class aqreporter(object):
         if self.dummy_data==True:
             temp=random.randrange(-40,80,1)/2
             return temp
-        temp = None #dummy data for now
+        temp = self.temp_sensor.temperature
         return temp
 
     def read_baro_sensor(self):
         if self.dummy_data==True:
             baro=random.randrange(900,1200,1)
             return baro
-        baro = None #dummy data in mbar
+        baro = self.temp_sensor.relative_humidity
         return baro
 
     @staticmethod
