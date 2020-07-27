@@ -79,7 +79,7 @@ class aqreporter(object):
             i2c = busio.I2C(board.SCL, board.SDA)
             self.temp_sensor = adafruit_sht31d.SHT31D(i2c)
             self.baro_sensor = adafruit_sht31d.SHT31D(i2c)
-            selt.temp_offset = int(settings.get('temperature_correction'))
+            selt.temp_offset = float(settings.get('temperature_correction'))
         else:
             self.pm_sensor=None
             self.temp_sensor=None
