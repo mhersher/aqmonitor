@@ -50,7 +50,8 @@ class reporter(object):
         config=configparser.ConfigParser()
         config.read(self.configfile)
         settings = config['DEFAULT']
-
+        
+        print(settings)
         #Auth0 Auth Settings
         self.auth0_request_url = settings.get('auth0_request_url')
         self.auth0_grant_type = settings.get('auth0_grant_type')
@@ -68,31 +69,34 @@ class reporter(object):
             self.measurement_frequency=int(settings.get('measurement_frequency'))
             self.measurement_delay=int(settings.get('measurement_delay'))
         if self.dummy_data == False:
-            configure_sensors(self,settings)
+            self.configure_sensors(settings,config)
+            self.temp_offset = float(settings.get('temperature_correction'))
         else:
             self.pm_sensor=None
             self.temp_sensor=None
+            self.temp_offset = 0
             print('Starting in dummy data mode - remember to delete bad data from server')
 
         #Upload endpoint settings
         self.measurement_endpoint=settings.get('measurement_endpoint')
 
-    def configure_sensors(self):
+    def configure_sensors(self,settings,config):
         #Grab and configure PM sensor
         if settings.get('pm_sensor') == 'SDS011':
-            from sds011 import SDS011
+            from std_sds011 import device as SDS011
             pm_sensor_settings = config['SDS011']
             self.pm_sensor = SDS011()
         elif settings.get('pm_sensor') == 'PMS5003':
-            from pms5003 import PMS5003
+            from std_pms5003 import device as PMS5003
             pm_sensor_settings = config['PMS5003']
-            self.pm_sensor = PMS5003()
+            print(pm_sensor_settings.get('device_path'),pm_sensor_settings.get('pin_sleep'))
+            self.pm_sensor = PMS5003(pm_sensor_settings.get('device_path'),pm_sensor_settings.get('baud_rate'),pm_sensor_settings.get('pin_sleep'))
         else:
             self.pm_sensor = None
 
         #Grab and configure temp sensor
         if settings.get('temp_sensor') == 'SHT31D':
-            from sht31d import SHT31D
+            from std_sht31d import device as SHT31D
             self.temp_sensor = SHT31D()
 
         #Grab and configure humidity sensor
@@ -132,13 +136,14 @@ class reporter(object):
         pm25reads = []
         pm10reads = []
         readcount=0
+        self.pm_sensor.enable()
         while readcount<3:
             data=self.pm_sensor.read()
             pm25reads.append(data['pm2.5'])
             pm10reads.append(data['pm10'])
             time.sleep(2)
             readcount += 1
-        self.pm_sensor.sleep()
+        self.pm_sensor.disable()
 
         pm25raw=median(pm25reads)
         pm10raw=median(pm10reads)
@@ -150,7 +155,7 @@ class reporter(object):
         if self.dummy_data==True:
             temp=random.randrange(-40,80,1)/2
             return temp
-        data = temp_sensor.read()
+        data = self.temp_sensor.read()
         temp = data['temp']
         corrected_temp = temp-self.temp_offset
         return corrected_temp

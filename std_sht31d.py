@@ -2,7 +2,7 @@ import board
 import busio
 import adafruit_sht31d
 
-class SHT31D():
+class device():
     def __init__(self):
         i2c = busio.I2C(board.SCL, board.SDA)
         self.device = adafruit_sht31d.SHT31D(i2c)
@@ -16,5 +16,5 @@ class SHT31D():
         return 1
 
     def read(self):
-        standardized_data = ('temp':self.device.temperature,'humidity':self.device.relative_humidity)
+        standardized_data = {'temp':self.device.temperature,'humidity':self.device.relative_humidity}
         return standardized_data

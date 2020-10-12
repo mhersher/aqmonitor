@@ -8,6 +8,9 @@ adafruit-io = "*"
 python-aqi = "*"
 py-sds011 = "*"
 pyserial = "*"
+pms5003 = "*"
+"rpi.gpio" = "*"
+adafruit-circuitpython-sht31d = "*"
 
 [dev-packages]
 

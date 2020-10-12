@@ -1,7 +1,7 @@
 from sds011 import SDS011
 import time
 
-class SDS011():
+class device():
     def __init__(self,device_path = '/dev/serial0',baud_rate = 9600,pin_sleep):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin_sleep, GPIO.OUT)
