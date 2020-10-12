@@ -6,15 +6,9 @@ from datetime import datetime, timedelta
 import configparser
 import argparse
 import random
-try:
-    from sds011 import SDS011
-    import board
-    import busio
-    import adafruit_sht31d
-except:
-    print('Sensor module import failed')
 
-class aqreporter(object):
+
+class reporter(object):
     def __init__(self):
         self.read_arguments()
         self.read_config_file()
@@ -64,7 +58,7 @@ class aqreporter(object):
         self.auth0_client_secret = settings.get('auth0_client_secret')
         self.auth0_audience = settings.get('auth0_audience')
 
-        #Device Master Settings
+        #Debug Mode
         self.device_id=settings.get('device_id')
         if self.debug == True:
             self.measurement_frequency = 30
@@ -74,20 +68,42 @@ class aqreporter(object):
             self.measurement_frequency=int(settings.get('measurement_frequency'))
             self.measurement_delay=int(settings.get('measurement_delay'))
         if self.dummy_data == False:
-            pm_sensor_path=settings.get('pm_sensor_device')
-            self.pm_sensor=SDS011(pm_sensor_path, use_query_mode=True)
-            i2c = busio.I2C(board.SCL, board.SDA)
-            self.temp_sensor = adafruit_sht31d.SHT31D(i2c)
-            self.baro_sensor = adafruit_sht31d.SHT31D(i2c)
-            selt.temp_offset = float(settings.get('temperature_correction'))
+            configure_sensors(self,settings)
         else:
             self.pm_sensor=None
             self.temp_sensor=None
-            self.baro_sensor=None
             print('Starting in dummy data mode - remember to delete bad data from server')
 
         #Upload endpoint settings
         self.measurement_endpoint=settings.get('measurement_endpoint')
+
+    def configure_sensors(self):
+        #Grab and configure PM sensor
+        if settings.get('pm_sensor') == 'SDS011':
+            from sds011 import SDS011
+            pm_sensor_settings = config['SDS011']
+            self.pm_sensor = SDS011()
+        elif settings.get('pm_sensor') == 'PMS5003':
+            from pms5003 import PMS5003
+            pm_sensor_settings = config['PMS5003']
+            self.pm_sensor = PMS5003()
+        else:
+            self.pm_sensor = None
+
+        #Grab and configure temp sensor
+        if settings.get('temp_sensor') == 'SHT31D':
+            from sht31d import SHT31D
+            self.temp_sensor = SHT31D()
+
+        #Grab and configure humidity sensor
+        if settings.get('humidity_sensor') == 'SHT31D':
+            if settings.get('temp_sensor') == 'SHT31D':
+                self.humidity_sensor = self.temp_sensor
+            else:
+                from sht31d import SHT31D
+                self.humidity_sensor = SHT31D()
+        else:
+            self.humidity_sensor = None
 
     def auth0_auth(self):
         headers = {'content-type':"application/x-www-form-urlencoded"}
@@ -113,15 +129,13 @@ class aqreporter(object):
         if self.dummy_data==True:
             pm=(random.randrange(0,400,1)/2,random.randrange(0,400,2)/4,random.randrange(0,250,5),random.randrange(0,250,5))
             return pm
-        self.pm_sensor.sleep(sleep=False)
         pm25reads = []
         pm10reads = []
-        time.sleep(self.measurement_delay)
         readcount=0
         while readcount<3:
-            data=self.pm_sensor.query()
-            pm25reads.append(data[0])
-            pm10reads.append(data[1])
+            data=self.pm_sensor.read()
+            pm25reads.append(data['pm2.5'])
+            pm10reads.append(data['pm10'])
             time.sleep(2)
             readcount += 1
         self.pm_sensor.sleep()
@@ -136,28 +150,29 @@ class aqreporter(object):
         if self.dummy_data==True:
             temp=random.randrange(-40,80,1)/2
             return temp
-        temp = self.temp_sensor.temperature
-        corrected_temp - temp-temperature_correction
+        data = temp_sensor.read()
+        temp = data['temp']
+        corrected_temp = temp-self.temp_offset
         return corrected_temp
 
-    def read_baro_sensor(self):
+    def read_humidity_sensor(self):
         if self.dummy_data==True:
-            baro=random.randrange(900,1200,1)
-            return baro
-        baro = self.temp_sensor.relative_humidity
-        return baro
+            humidity=random.randrange(900,1200,1)
+            return humidity
+        data = self.humidity_sensor.read()
+        return data['humidity']
 
     @staticmethod
-    def assemble_reading(device_id, pm = None, temp = None, baro = None):
+    def assemble_reading(device_id, pm = None, temp = None, relative_humidity = None):
         reading={}
         formatted_measurement_time=datetime.utcnow().isoformat()+"Z"
         reading['measured_at']=formatted_measurement_time
-        reading['pm10raw']=pm[1]
-        reading['pm10aqi']=pm[3]
-        reading['pm25raw']=pm[0]
-        reading['pm25aqi']=pm[2]
-        reading['temp']=temp
-        reading['baro']=baro
+        reading['pm10raw']=float(pm[1])
+        reading['pm10aqi']=int(pm[3])
+        reading['pm25raw']=float(pm[0])
+        reading['pm25aqi']=int(pm[2])
+        reading['temp']=float(temp)
+        reading['humidity']=float(relative_humidity)
         reading['device_id']=device_id
         return reading
 
@@ -169,8 +184,8 @@ class aqreporter(object):
             print('Reading temp')
             temp=self.read_temp_sensor()
 
-            print('Reading baro')
-            baro=self.read_baro_sensor()
+            print('Reading humidity')
+            baro=self.read_humidity_sensor()
 
             print('Assembling reading')
             reading=self.assemble_reading(self.device_id,pm,temp,baro)
@@ -182,4 +197,4 @@ class aqreporter(object):
             time.sleep(self.measurement_frequency-self.measurement_delay-4)
 
 if __name__=="__main__":
-    aqreporter().poller()
+    reporter().poller()
