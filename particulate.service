@@ -3,7 +3,7 @@ Description=Particulate Sensor
 After=network.target
 
 [Service]
-ExecStart=/home/pi/.local/share/virtualenvs/aqtester-GPMwka85/bin/python /home/pi/aqtester/particulate.py
+ExecStart=/home/pi/.local/share/virtualenvs/aqtester-GPMwka85/bin/python /home/pi/hades/sampler.py -c /home/pi/meter.conf
 StandardOutput=inherit
 StandardError=inherit
 Restart=always

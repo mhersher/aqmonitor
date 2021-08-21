@@ -8,8 +8,11 @@ adafruit-io = "*"
 python-aqi = "*"
 py-sds011 = "*"
 pyserial = "*"
+pms5003 = "*"
+"rpi.gpio" = "*"
+adafruit-circuitpython-sht31d = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.7"
+python_version = "3"
