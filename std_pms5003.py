@@ -3,7 +3,7 @@ import time
 import RPi.GPIO as GPIO
 
 class device():
-    def __init__(self,device_path = '/dev/serial0',baud_rate = 9600,pin_sleep = 17):
+    def __init__(self,device_path = '/dev/ttyS0',baud_rate = 9600,pin_sleep = 17):
         print(device_path,baud_rate,pin_sleep)
         self.pin_sleep = int(pin_sleep)
         GPIO.setmode(GPIO.BCM)
@@ -34,6 +34,7 @@ class device():
         print('reading')
         #self.enable()
         data = self.device.read()
+        print(data)
         standardized_data = {'pm1':data.pm_ug_per_m3(1),'pm2.5':data.pm_ug_per_m3(2.5),'pm10':data.pm_ug_per_m3(10)}
         #self.disable()
         return standardized_data

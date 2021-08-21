@@ -1,6 +1,6 @@
 import time
 import aqi
-from statistics import median
+from statistics import median, mean
 import requests
 from datetime import datetime, timedelta
 import configparser
@@ -67,7 +67,6 @@ class reporter(object):
             print('Starting in debug mode')
         else:
             self.measurement_frequency=int(settings.get('measurement_frequency'))
-            self.measurement_delay=int(settings.get('measurement_delay'))
         if self.dummy_data == False:
             self.configure_sensors(settings,config)
             self.temp_offset = float(settings.get('temperature_correction'))
@@ -127,7 +126,7 @@ class reporter(object):
         if post.ok == False:
             print(post.status_code, post.content)
             print(post.request.headers, post.request.body)
-            raise PostError
+            post_retry = requests.post(self.measurement_endpoint,json=reading,headers=headers)
 
     def read_pm_sensor(self):
         if self.dummy_data==True:
@@ -137,16 +136,22 @@ class reporter(object):
         pm10reads = []
         readcount=0
         self.pm_sensor.enable()
-        while readcount<3:
+        delaycount=0
+        while delaycount<10:
+            self.pm_sensor.read()
+            time.sleep(0.1)
+            delaycount += 1
+        while readcount<120:
             data=self.pm_sensor.read()
             pm25reads.append(data['pm2.5'])
             pm10reads.append(data['pm10'])
-            time.sleep(2)
+            time.sleep(1)
             readcount += 1
+        print(pm25reads)
         self.pm_sensor.disable()
 
-        pm25raw=median(pm25reads)
-        pm10raw=median(pm10reads)
+        pm25raw=mean(pm25reads)
+        pm10raw=mean(pm10reads)
         pm25aqi=aqi.to_iaqi(aqi.POLLUTANT_PM25,pm25raw,algo=aqi.ALGO_EPA)
         pm10aqi=aqi.to_iaqi(aqi.POLLUTANT_PM10,pm10raw,algo=aqi.ALGO_EPA)
         return (pm25raw, pm10raw, pm25aqi, pm10aqi)
@@ -199,7 +204,7 @@ class reporter(object):
             print('Sending reading')
             result=self.post_reading(reading)
 
-            time.sleep(self.measurement_frequency-self.measurement_delay-4)
+            time.sleep(self.measurement_frequency-30)
 
 if __name__=="__main__":
     reporter().poller()
